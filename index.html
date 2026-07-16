@@ -606,7 +606,14 @@ async function loadAppData() {
     if (!res.ok) {
       throw new Error(`Could not load ${path} (HTTP ${res.status})`);
     }
-    QUESTION_BANKS[cat.file] = await res.json();
+    const raw = await res.json();
+    // Question files come in two shapes depending on category:
+    //   - a bare array of questions (e.g. vocabulary.json), or
+    //   - an object wrapping the array as `.questions`
+    //     (e.g. collocations.json, category7.json: { categoryId, title, ..., questions: [...] })
+    // Normalize both to a plain array so the rest of the app (shuffle,
+    // pickQuestions, etc.) can always rely on QUESTION_BANKS[cat.file] being an array.
+    QUESTION_BANKS[cat.file] = Array.isArray(raw) ? raw : (raw.questions || []);
   }));
 }
 
